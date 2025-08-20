@@ -1,57 +1,35 @@
-Secure Photo Sharing App
+**#AWS Secure Photo Sharing App**
 
-A cloud-secure, Terraform-powered photo sharing app that keeps your images safe while making uploads and viewing seamless. Every action is logged, encrypted, and access-controlled.
+A fully secure, Terraform-powered photo-sharing app on AWS. Upload, view, and manage images safely using S3, CloudFront, IAM, and KMS — all without exposing your buckets directly!
 
-⚡ Features
+**Features:**
+- Secure Uploads & Downloads (signed URLs only)
+- Private S3 Buckets (encrypted uploads and logs)
+- CloudFront Distribution (fast, globally available, HTTPS enforced)
+- IAM Access Control (separate uploader and viewer roles)
+- CloudTrail Logging (all actions logged, encrypted with KMS)
+- Terraform Automation (infrastructure as code for easy deployment)
 
-Secure Uploads: Only authorized users can upload images using signed PUT URLs.
+**Tech Stack:**
+- AWS: S3, CloudFront, IAM, KMS, CloudTrail
+- Backend: Python + Flask
+- Frontend: HTML + Vanilla JS (Python HTTP server)
+- Infrastructure: Terraform
 
-Secure Viewing: CloudFront signed GET URLs prevent direct S3 access.
+**How It Works:**
+1. Frontend on localhost – users choose Upload or View
+2. Backend (Flask) – generates signed CloudFront URLs using IAM keys
+3. S3 Uploads Bucket – receives encrypted images securely
+4. CloudFront – serves signed URLs only, images never public
+5. Logs Bucket – CloudTrail logs all activity, encrypted with KMS
 
-Private S3 Buckets: Configured with CORS for localhost and server-side encryption.
+**Important:**
+- CloudFront Key Pair must be created beforehand
+- KMS Key for Logs Bucket must be created beforehand and referenced in Terraform
 
-CloudTrail + KMS: Logs all actions, KMS-encrypted for integrity.
-
-IAM Role Separation: Dedicated users for uploading and viewing.
-
-Terraform-Powered: Infrastructure fully reproducible and automated.
-
-Automation-Ready: Backend credentials and CloudFront domain updates handled automatically.
-
-🛠️ Tech Stack
-
-Frontend: HTML, CSS, JS
-
-Backend: Flask + Python
-
-AWS Services: S3, CloudFront, IAM, CloudTrail, KMS
-
-Infrastructure as Code: Terraform
-
-⚡ Key Notes
-
-CloudFront key pair must be created beforehand for signed GET URLs.
-
-KMS key for logs bucket must be created and replaced in Terraform before deployment.
-
-🚀 Flow
-Frontend (Browser)
-       |
-       | Upload / View Request
-       v
-   Flask Backend
-   - Generates signed PUT/GET URLs
-   - Lists S3 files
-       |
-       v
-  AWS S3 Buckets
-  uploads-bucket      <- Private image storage
-  logs-bucket         <- KMS-encrypted CloudTrail logs
-       ^
-       |
-   CloudFront
-   - Delivers images securely
-   - Uses pre-created key pair
-
-
-Deploy everything with Terraform in minutes — credentials generated, CloudFront updated, backend running — all ready to go live.
+**Summary**
+This app is **end-to-end secure, fast, and cloud-ready. It combines AWS best practices with real-world cloud security concepts:
+- Users never access S3 directly
+- IAM roles strictly separate uploader and viewer privileges
+- All activity is logged and encrypted
+- Infrastructure is fully automated with Terraform, making deployment, teardown, and scaling a breeze
