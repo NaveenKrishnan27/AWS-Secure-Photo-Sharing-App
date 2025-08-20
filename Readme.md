@@ -15,13 +15,21 @@ A fully secure, Terraform-powered photo-sharing app on AWS. Upload, view, and ma
 - Backend: Python + Flask
 - Frontend: HTML + Vanilla JS (Python HTTP server)
 - Infrastructure: Terraform
+- Automation: Bash scripts (`start.sh`, `deploy.sh`, `destroy.sh`)
 
-## How It Works
+## ⚙️ How It Works
 1. Frontend on localhost – users choose Upload or View
 2. Backend (Flask) – generates signed CloudFront URLs using IAM keys
 3. S3 Uploads Bucket – receives encrypted images securely
 4. CloudFront – serves signed URLs only, images never public
 5. Logs Bucket – CloudTrail logs all activity, encrypted with KMS
+
+## App Usage:
+
+1. `start.sh` deploys infrastructure, generates `.env`, launches backend, and hosts frontend  
+2. **Upload a photo** via the frontend — backend generates a pre-signed PUT URL  
+3. **View uploaded photos** via the frontend — backend fetches CloudFront signed GET URLs  
+4. `destroy.sh` cleans up everything: empties S3 buckets and destroys Terraform infrastructure 
 
 ## Important Notes
 - CloudFront Key Pair must be created beforehand
@@ -29,7 +37,8 @@ A fully secure, Terraform-powered photo-sharing app on AWS. Upload, view, and ma
 
 ## Summary
 This app is **end-to-end secure, fast, and cloud-ready**. It combines AWS best practices with real-world cloud security concepts:
-- Users never access S3 directly
+- Pre-signed URLs to avoid public S3 exposure
 - IAM roles strictly separate uploader and viewer privileges
-- All activity is logged and encrypted
+- Encrypted logging and full monitoring with CloudTrail & KMS  
 - Infrastructure is fully automated with Terraform, making deployment, teardown, and scaling a breeze
+- Deploy, test, and destroy in a few commands — fully repeatable and cost-controlled  
