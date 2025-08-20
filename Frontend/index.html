@@ -1,0 +1,223 @@
+<!--
+  index.html
+  ----------
+  Frontend UI for the Secure Photo Sharing App.
+
+  Purpose:
+  - Provides a simple interface with two main actions:
+      1. Upload a new photo (calls backend to generate S3 pre-signed PUT URL).
+      2. View existing photos (fetches list and retrieves CloudFront signed URLs).
+  - Contains JavaScript logic to talk to the backend Flask API (running on port 5000).
+  - Displays images securely via CloudFront, never exposing S3 directly.
+
+  Tech/Concepts:
+  - HTML/CSS for UI.
+  - Vanilla JS for API calls, CORS handling, and dynamic updates.
+  - Security enforced via signed URLs + IAM roles (no direct bucket access).
+-->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Photo Sharing App</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background-color: #24292e;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .button-group {
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .section {
+      display: none;
+      margin-top: 30px;
+    }
+
+    select, input[type="file"] {
+      padding: 10px;
+      font-size: 16px;
+      margin: 8px;
+    }
+
+    img {
+      margin-top: 20px;
+      max-width: 90%;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    🔐 Secure Photo Sharing App
+  </header>
+
+  <div class="container">
+    <h2>Welcome, choose an action below:</h2>
+    <div class="button-group">
+      <button onclick="showSection('upload')">Upload Photo</button>
+      <button onclick="showSection('view')">View Photos</button>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="upload" class="section">
+      <h3>📤 Upload a New Photo</h3>
+      <input type="file" id="fileInput" accept="image/*">
+      <button onclick="uploadImage()">Upload</button>
+    </div>
+
+    <!-- View Section -->
+    <div id="view" class="section">
+      <h3>🖼️ View Existing Photos</h3>
+      <select id="fileDropdown">
+        <option disabled selected>Loading files...</option>
+      </select>
+      <button onclick="fetchImage()">View Image</button>
+      <br>
+      <img id="preview" alt="Image Preview">
+    </div>
+  </div>
+
+<!-- Shows the selected section (upload/view) and hides others -->
+  <script>
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(sectionId).style.display = 'block';
+
+      if (sectionId === 'view') {
+        loadDropdown();
+      }
+    }
+
+<!-- Fetches list of files from backend and populates the dropdown -->
+    async function loadDropdown() {
+      const dropdown = document.getElementById("fileDropdown");
+      try {
+        const res = await fetch("http://localhost:5000/list-files");
+        const files = await res.json();
+
+        dropdown.innerHTML = '';
+        files.forEach(file => {
+          const option = document.createElement("option");
+          option.value = file;
+          option.textContent = file;
+          dropdown.appendChild(option);
+        });
+      } catch (err) {
+        dropdown.innerHTML = '<option>Error loading files</option>';
+      }
+    }
+
+<!-- Requests a signed CloudFront URL for selected file and displays the image -->
+    async function fetchImage() {
+      const file = document.getElementById("fileDropdown").value;
+      const img = document.getElementById("preview");
+
+      if (!file) {
+        alert("Please select a file!");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/signed-url?file=${encodeURIComponent(file)}`);
+        const data = await res.json();
+
+        if (data.url) {
+	  console.log("Generated signed URL:", data.url);
+          img.src = data.url;
+          img.style.display = "block";
+        } else {
+          alert("Failed to fetch image.");
+          img.style.display = "none";
+        }
+      } catch (err) {
+        alert("Something went wrong: " + err.message);
+        img.style.display = "none";
+      }
+    }
+
+<!-- Requests a pre-signed S3 PUT URL from backend and uploads the selected file securely -->
+    async function uploadImage() {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please select a file to upload.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/generate-put-url?filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(file.type)}`);
+        const data = await res.json();
+
+        if (!data.put_url) {
+          alert("Failed to get upload URL.");
+          return;
+        }
+
+        const upload = await fetch(data.put_url, {
+          method: "PUT",
+          headers: {
+            'Content-Type': file.type,
+            'x-amz-server-side-encryption': 'AES256'
+          },
+          body: file
+        });
+
+        if (upload.ok) {
+          alert("✅ Upload successful!");
+          document.getElementById("fileInput").value = "";
+        } else {
+          alert("❌ Upload failed.");
+        }
+      } catch (err) {
+        alert("Upload error: " + err.message);
+      }
+    }
+  </script>
+
+</body>
+</html>

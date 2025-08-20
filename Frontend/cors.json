@@ -1,0 +1,26 @@
+/*
+  cors.json
+  ----------
+  Defines the S3 CORS (Cross-Origin Resource Sharing) rules for this app.
+
+  Purpose:
+  - Allows the frontend (running in browser) to interact with the backend (Flask API on port 5000).
+  - Grants permission for GET, PUT, and HEAD requests from http://localhost:5000.
+  - Exposes headers like ETag for client-side caching/validation.
+  
+  This file is applied to the S3 bucket so that uploads and downloads work correctly
+  when called from the local frontend or CloudFront.
+*/
+
+
+
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["http://localhost:5000"],
+      "AllowedMethods": ["GET", "PUT", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"]
+    }
+  ]
+}
