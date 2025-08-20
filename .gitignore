@@ -27,6 +27,3 @@ crash.log
 # Ignore logs
 *.log
 
-# Ignore local files
-*.sqlite3
-*.db
